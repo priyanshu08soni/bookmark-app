@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { signOut } from '@/app/actions/auth'
-import type { User } from '@supabase/supabase-js'
+import type { User, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import AddBookmarkForm from './AddBookmarkForm'
 import BookmarkCard from './BookmarkCard'
 import EmptyState from './EmptyState'
@@ -24,7 +24,9 @@ export default function Dashboard({ user }: DashboardProps) {
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
     const [loading, setLoading] = useState(true)
     const [deletingId, setDeletingId] = useState<string | null>(null)
-    const supabase = createClient()
+
+    // Memoize client to prevent new instances on every render
+    const supabase = useMemo(() => createClient(), [])
 
     const fetchBookmarks = useCallback(async () => {
         const { data, error } = await supabase
@@ -53,27 +55,30 @@ export default function Dashboard({ user }: DashboardProps) {
                     table: 'bookmarks',
                     filter: `user_id=eq.${user.id}`,
                 },
-                (payload) => {
+                (payload: RealtimePostgresChangesPayload<Bookmark>) => {
+                    console.log('Real-time event received:', payload.eventType, payload)
                     if (payload.eventType === 'INSERT') {
                         const newBookmark = payload.new as Bookmark
+                        console.log('Adding new bookmark from real-time:', newBookmark)
                         setBookmarks((prev) => {
                             if (prev.some((b) => b.id === newBookmark.id)) return prev
                             return [newBookmark, ...prev]
                         })
                     } else if (payload.eventType === 'DELETE') {
+                        console.log('Removing bookmark from real-time:', payload.old.id)
                         setBookmarks((prev) =>
-                            prev.filter((b) => b.id !== payload.old.id)
+                            prev.filter((b) => b.id !== (payload.old as Bookmark).id)
                         )
                     } else if (payload.eventType === 'UPDATE') {
                         setBookmarks((prev) =>
                             prev.map((b) =>
-                                b.id === payload.new.id ? (payload.new as Bookmark) : b
+                                b.id === (payload.new as Bookmark).id ? (payload.new as Bookmark) : b
                             )
                         )
                     }
                 }
             )
-            .subscribe((status) => {
+            .subscribe((status: string) => {
                 console.log('Real-time subscription status:', status)
                 if (status === 'SUBSCRIBED') {
                     console.log('Listening for changes on bookmarks table...')
