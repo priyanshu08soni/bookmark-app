@@ -73,7 +73,12 @@ export default function Dashboard({ user }: DashboardProps) {
                     }
                 }
             )
-            .subscribe()
+            .subscribe((status) => {
+                console.log('Real-time subscription status:', status)
+                if (status === 'SUBSCRIBED') {
+                    console.log('Listening for changes on bookmarks table...')
+                }
+            })
 
         return () => {
             supabase.removeChannel(channel)
