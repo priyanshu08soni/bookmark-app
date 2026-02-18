@@ -44,16 +44,15 @@ export default function Dashboard({ user }: DashboardProps) {
     useEffect(() => {
         fetchBookmarks()
 
-        // Real-time subscription
+        // Real-time subscription - RLS handles the security filtering
         const channel = supabase
-            .channel(`bookmarks:${user.id}`)
+            .channel('any-name-realtime')
             .on(
                 'postgres_changes',
                 {
                     event: '*',
                     schema: 'public',
                     table: 'bookmarks',
-                    filter: `user_id=eq.${user.id}`,
                 },
                 (payload: RealtimePostgresChangesPayload<Bookmark>) => {
                     console.log('Real-time event received:', payload.eventType, payload)
