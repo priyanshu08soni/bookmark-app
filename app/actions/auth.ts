@@ -7,7 +7,7 @@ import { headers } from 'next/headers'
 export async function signInWithGoogle() {
     const supabase = await createClient()
     const headersList = await headers()
-    const origin = headersList.get('origin') ?? 'http://localhost:3000'
+    const origin = headersList.get('origin') ?? 'https://bookmark-app-liard.vercel.app/'
 
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
