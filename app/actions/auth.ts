@@ -24,6 +24,7 @@ export async function signInWithGoogle() {
     }
 
     if (data.url) {
+        console.log('Redirecting user to Google OAuth:', data.url)
         redirect(data.url)
     }
 }
