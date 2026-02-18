@@ -55,26 +55,12 @@ export default function Dashboard({ user }: DashboardProps) {
                     table: 'bookmarks',
                 },
                 (payload: RealtimePostgresChangesPayload<Bookmark>) => {
-                    console.log('Real-time event received:', payload.eventType, payload)
-                    if (payload.eventType === 'INSERT') {
-                        const newBookmark = payload.new as Bookmark
-                        console.log('Adding new bookmark from real-time:', newBookmark)
-                        setBookmarks((prev) => {
-                            if (prev.some((b) => b.id === newBookmark.id)) return prev
-                            return [newBookmark, ...prev]
-                        })
-                    } else if (payload.eventType === 'DELETE') {
-                        console.log('Removing bookmark from real-time:', payload.old.id)
-                        setBookmarks((prev) =>
-                            prev.filter((b) => b.id !== (payload.old as Bookmark).id)
-                        )
-                    } else if (payload.eventType === 'UPDATE') {
-                        setBookmarks((prev) =>
-                            prev.map((b) =>
-                                b.id === (payload.new as Bookmark).id ? (payload.new as Bookmark) : b
-                            )
-                        )
-                    }
+                    console.log('Real-time event received:', payload.eventType)
+
+                    // Most robust strategy: whenever any change happens (Insert/Delete),
+                    // just refetch the list. This ensures all tabs are perfectly synced
+                    // with the database without complex state merging logic.
+                    fetchBookmarks()
                 }
             )
             .subscribe((status: string) => {
