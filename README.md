@@ -139,7 +139,7 @@ bookmark-app/
 │       └── server.ts        # Server Supabase client
 ├── supabase/
 │   └── schema.sql           # Database schema + RLS policies
-├── proxy.ts                 # Next.js 16 proxy (auth guard)
+├── middleware.ts            # Next.js middleware (auth guard)
 ├── .env.example             # Environment variables template
 └── vercel.json              # Vercel deployment config
 ```
