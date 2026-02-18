@@ -44,9 +44,10 @@ export default function Dashboard({ user }: DashboardProps) {
     useEffect(() => {
         fetchBookmarks()
 
-        // Real-time subscription - RLS handles the security filtering
-        const channel = supabase
-            .channel('any-name-realtime')
+        // Real-time subscription: Listen for DB changes AND direct broadcast signals
+        const channel = supabase.channel(`user-sync:${user.id}`)
+
+        channel
             .on(
                 'postgres_changes',
                 {
@@ -54,20 +55,21 @@ export default function Dashboard({ user }: DashboardProps) {
                     schema: 'public',
                     table: 'bookmarks',
                 },
-                (payload: RealtimePostgresChangesPayload<Bookmark>) => {
-                    console.log('Real-time event received:', payload.eventType)
-
-                    // Most robust strategy: whenever any change happens (Insert/Delete),
-                    // just refetch the list. This ensures all tabs are perfectly synced
-                    // with the database without complex state merging logic.
+                () => {
+                    console.log('Database change detected -> Refreshing')
+                    fetchBookmarks()
+                }
+            )
+            .on(
+                'broadcast',
+                { event: 'bookmarks-updated' },
+                () => {
+                    console.log('Broadcast signal received -> Refreshing')
                     fetchBookmarks()
                 }
             )
             .subscribe((status: string) => {
-                console.log('Real-time subscription status:', status)
-                if (status === 'SUBSCRIBED') {
-                    console.log('Listening for changes on bookmarks table...')
-                }
+                console.log('Real-time connection status:', status)
             })
 
         return () => {

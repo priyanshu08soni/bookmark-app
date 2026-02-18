@@ -77,6 +77,14 @@ export default function AddBookmarkForm({ userId, onBookmarkAdded }: AddBookmark
             onBookmarkAdded(data)
         }
 
+        // Broadcast a signal to other tabs
+        await supabase.channel(`user-sync:${userId}`)
+            .send({
+                type: 'broadcast',
+                event: 'bookmarks-updated',
+                payload: {},
+            })
+
         setUrl('')
         setTitle('')
         setSuccess(true)
