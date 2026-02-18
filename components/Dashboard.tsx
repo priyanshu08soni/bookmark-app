@@ -81,7 +81,11 @@ export default function Dashboard({ user }: DashboardProps) {
     }, [fetchBookmarks, supabase, user.id])
 
     const handleDelete = async (id: string) => {
+        // Optimistic update: Remove from UI immediately
+        const previousBookmarks = [...bookmarks]
+        setBookmarks((prev) => prev.filter((b) => b.id !== id))
         setDeletingId(id)
+
         const { error } = await supabase
             .from('bookmarks')
             .delete()
@@ -90,10 +94,12 @@ export default function Dashboard({ user }: DashboardProps) {
 
         if (error) {
             console.error('Delete error:', error)
-            setDeletingId(null)
+            // Rollback if delete fails
+            setBookmarks(previousBookmarks)
+            alert('Failed to delete bookmark. Please try again.')
         }
-        // Realtime will handle state update
-        setTimeout(() => setDeletingId(null), 500)
+
+        setDeletingId(null)
     }
 
     const avatarUrl = user.user_metadata?.avatar_url as string | undefined
